@@ -19,7 +19,7 @@ THREAD_N = 8
 PROCESS_N = None
 GET_HTML_TIMEOUT = 30
 ASYNC_N = 4
-TITLE_KEYWORD = ["公告", "公示", "通知", "紧急", "招聘", "聘用", "聘用", "印发", "教育", "细则", "公开"]
+TITLE_KEYWORD = ["公告", "公示", "通知", "紧急", "招聘", "聘用", "聘用", "印发", "教育", "细则", "公开", "教师", "教资"]
 TITLE_SEARCH_DEPTH = 2
 TITLE_LENGTH = 7
 ALLOW_DATE_OBJ_TAG_NAME = ["i", "div", "span", "a", "p", ]
@@ -57,10 +57,10 @@ class AsyncGetHTML:
         # print("进程 %s 获取到 URL : %s 当前 task: %s" % (self.process_id, url_obj["web_url"], task))
         url_obj = obj
         url = url_obj["web_url"]
-        host = re.search(r"^(?:http|ftp)s?:\\/\/([\w][^\/=\s]+)\/?|(^w{3}[\.\w][^\/\=\s]{2,})\/?", url_obj["web_url"])
+        host = re.search(r"http[s]?://.+?/|http[s]?://.+", url_obj["web_url"])
         if host is None:
             url_obj["host"] = url + '/'
-            print("尝试搜索HOST失败 URL：%s" % url)
+            print("HOST不匹配 尝试直接添加 / URL：%s" % url)
         else:
             url_obj["host"] = host.group()
         page = await self.browser.newPage()
@@ -73,7 +73,6 @@ class AsyncGetHTML:
             print("GET_HTML:%s OK" % (url,))
             url_obj["status"] = "GET_HTML_SUCCESS"
             # self.output_queue.put(url_obj)
-            await page.close()
         except TimeoutError as e:
             print("GET_HTML:%s Fail: %s" % (url, e))
             url_obj["status"] = "GET_HTML_TIMEOUT"
@@ -82,16 +81,23 @@ class AsyncGetHTML:
             print("GET_HTML:%s Fail: %s" % (url, e))
             url_obj["status"] = "GET_HTML_FAIL"
             url_obj["error"] = e
+        await page.close()
         return url_obj
 
     async def run(self):
         result = []
         try:
             while True:
+                self.lock.acquire()
+                await self.async_lock.acquire()
                 if self.entry_queue.empty():
+                    self.async_lock.release()
+                    self.lock.release()
                     return result
                 else:
                     url_obj = self.entry_queue.get_nowait()
+                    self.async_lock.release()
+                    self.lock.release()
                     r = await self.download_html(url_obj)
                     result.append(r)
         except Exception as e:
@@ -100,8 +106,11 @@ class AsyncGetHTML:
     def start(self):
         result = []
         try:
+            # 异步 并发
             tasks = [self.run() for i in range(ASYNC_N)]
             done, pending = self.loop.run_until_complete(asyncio.wait(tasks))
+            for i in pending:
+                print("pending:%s" % i)
             print("进程任务完成，准备退出")
         except Exception as e:
             print(e)
@@ -122,17 +131,32 @@ class AsyncGetHTML:
 
 # 多线程解析页面
 class Threads(threading.Thread):
-    def __init__(self, id: int, entryQueue: queue.Queue, outputQueue: queue.Queue):
+    def __init__(self, id: int, entryQueue: queue.Queue, outputQueue: queue.Queue, lock: threading.Lock):
         super().__init__()
 
         self.thread_id = id
         self.output_queue = outputQueue
         self.entry_queue = entryQueue
+        self.lock = lock
         # 创建解析对象
         self.Parser = ParserHTML()
 
     def run(self) -> None:
-        self.parser()
+        while True:
+            self.lock.acquire()
+            if self.entry_queue.empty():
+                self.lock.release()
+                break
+            else:
+                url_obj = self.entry_queue.get_nowait()
+                self.lock.release()
+                result = self.Parser.resolve(url_obj = url_obj)
+                if result is [] or result is None:
+                    J["PAGE_FIND_FAIL"] += 1
+                    pass
+                else:
+                    J["PAGE_FIND_OK"] += 1
+                    [self.output_queue.put_nowait(i) for i in result]
         print("线程ID: %s执行完成" % self.thread_id)
 
     # def get_html(self, url_obj: dict) -> str:
@@ -212,20 +236,6 @@ class Threads(threading.Thread):
     #         # })
     #
     #         return "连接失败"
-
-    def parser(self):
-        while True:
-            if self.entry_queue.empty():
-                break
-            else:
-                url_obj = self.entry_queue.get_nowait()
-                result = self.Parser.resolve(url_obj = url_obj)
-                if result is None:
-                    J["PAGE_FIND_FAIL"] += 1
-                    pass
-                else:
-                    J["PAGE_FIND_OK"] += 1
-                    [self.output_queue.put_nowait(i) for i in result]
 
 
 class ParserHTML:
@@ -382,22 +392,34 @@ class ParserHTML:
 
 
 # 数据重复筛选
-def target_compare(result_: list):
-    db = database_io.DatabaseIO()
-    old_target_url = db.get_all_target_url()
-    _result = []
-    for i in result_:
-        if i["target_url"] in old_target_url:
+def target_compare(compared_data: list, existed_target_url: list):
+    result = []
+    for i in compared_data:
+        if i["target_url"] in existed_target_url:
             pass
         else:
-            _result.append(i)
-    print("旧数据总条数: %s 条" % len(old_target_url))
-    print("新数据量: %s 条" % len(_result))
-    return _result
+            result.append(i)
+    print("已存在总条数: %s 条" % len(existed_target_url))
+    print("新数据量: %s 条" % len(result))
+    return result
+
+
+# 关键词查询
+def keyword_query(compared_data: list, keyword_list = None):
+    result = []
+    if keyword_list is None: keyword_list = TITLE_KEYWORD
+
+    for target in compared_data:
+        target["weights"] = 0
+        for keyword in keyword_list:
+            if keyword in target["target_title"]: target["weights"] += 1
+        result.append(target)
+
+    return result
 
 
 # 启动函数
-def start(PROCESS_N = PROCESS_N, THREAD_N = THREAD_N):
+def start(process_n = PROCESS_N, thread_n = THREAD_N):
     info()
     db = database_io.DatabaseIO()
     all_url = db.get_all_web_obj()
@@ -418,15 +440,14 @@ def start(PROCESS_N = PROCESS_N, THREAD_N = THREAD_N):
     t_oq = queue.Queue()
     [eq.put(i) for i in all_url]
     lock = Lock()
-    if PROCESS_N is None:
-        PROCESS_N = os.cpu_count()
+    if process_n is None: process_n = os.cpu_count()
     p_t_s = time.time()
     try:
-        process_id_list = range(PROCESS_N)
+        process_id_list = range(process_n)
         process = [Process(target = loading_process, args = (i, eq, oq, lock)) for i in process_id_list]
         [p.start() for p in process]
         RESULT = []
-        while len(RESULT) != PROCESS_N:
+        while len(RESULT) != process_n:
             RESULT.append(oq.get())
         [p.join() for p in process]
         for i in RESULT:
@@ -436,28 +457,36 @@ def start(PROCESS_N = PROCESS_N, THREAD_N = THREAD_N):
                 for r in i:
                     if r["status"] == "GET_HTML_SUCCESS":
                         t_eq.put(r)
+                    else:
+                        pass  # TODO: 添加到URL状态
     except Exception as e:
         print(e)
     p_t_e = time.time()
-    print("获取网页内容完成 使用进程数量：%s 耗时：%s" % (PROCESS_N, (p_t_e - p_t_s)))
+    print("获取网页内容完成 使用进程数量：%s 耗时：%s" % (process_n, (p_t_e - p_t_s)))
 
     # ——————————————————————————— 解析开始 ———————————————————————————————#
-    print("解析开始 线程数量：%s 任务TAG：%s" % (THREAD_N, tag))
-    threads = [Threads(id = thread_id, entryQueue = t_eq, outputQueue = t_oq) for thread_id in range(THREAD_N)]
+    print("解析开始 线程数量：%s 任务TAG：%s" % (thread_n, tag))
+    thread_lock = threading.Lock()
+    threads = [Threads(id = thread_id, entryQueue = t_eq, outputQueue = t_oq, lock = thread_lock) for thread_id in range(thread_n)]
     [t.start() for t in threads]
     [t.join() for t in threads]
-    print("解析完成 使用线程数量：%s 任务TAG：%s" % (THREAD_N, tag))
+    print("解析完成 使用线程数量：%s 任务TAG：%s" % (thread_n, tag))
 
-    # ——————————————————————————— 数据清理 ———————————————————————————————#
-
-    # ——————————————————————————— 数据上传 ———————————————————————————————#
-    print("执行数据入库.....")
+    # ——————————————————————————— 数据处理 ———————————————————————————————#
+    # 从线程输出队列中取出数据
     result = []
     while not t_oq.empty():
         result.append(t_oq.get())
-    db.upload_result(
-        result
-    )
+
+    result = target_compare(result, db.get_all_target_url())
+
+    result = keyword_query(result)
+
+    # ——————————————————————————— 数据上传 ———————————————————————————————#
+    print("执行数据入库.....")
+    for i in result:
+        print(i["target_title"], i["weights"])
+    db.upload_result(result)
 
 
 # 加载进程函数
