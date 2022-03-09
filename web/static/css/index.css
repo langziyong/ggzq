@@ -1,0 +1,48 @@
+.background{
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    background: #8e9eab;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #eef2f3, #8e9eab);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #eef2f3, #8e9eab); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+.sidebar{
+    position: fixed;
+    left: 0;
+    height: 100vh;
+    width: 15vw;
+    padding: 16px;
+}
+.main{
+    position: absolute;
+    left: 15vw;
+    width: 85vw;
+    margin: 0;
+}
+.source_manage_display_body{
+    display: flex;
+    width: 100%;
+    height: auto;
+}
+.source_manage_display_head{
+    display: flex;
+    width: 100%;
+    height: auto;
+}
+.flex_item{
+    margin: 10px;
+    background-color: #0d6efd;
+    color: white;
+}
+.flex_item_1{
+    flex: 1;
+}
+.flex_item_2{
+    flex: 2;
+}
+.flex_item_4{
+    flex: 4;
+}
+.flex_item_8{
+    flex: 8;
+}
