@@ -39,7 +39,7 @@ function load_data_to_table() {
                     ALL_PAGE = Math.ceil(r["responseJSON"]["total"] / LIMIT)
                     result_table_body.html("")
                     for (const d in data) {
-                        let html_f = `<tr><td>${data[d]["id"]}</td><td><a href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></td><td><a href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></td><td>${data[d]["target_date"]}</td><td>${data[d]["weights"]}</td></tr>`
+                        let html_f = `<tr><td>${data[d]["id"]}</td><td><a target="_blank" href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></td><td><a target="_blank" href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></td><td>${data[d]["target_date"]}</td><td>${data[d]["weights"]}</td></tr>`
                         result_table_body.append(html_f)
                     }
                     $("#now_page").html(PAGE)
@@ -62,7 +62,7 @@ function load_data_to_table() {
                 ALL_PAGE = Math.ceil(r["responseJSON"]["total"] / LIMIT)
                 result_table_body.html("")
                 for (const d in data) {
-                    let html_f = `<tr><td>${data[d]["id"]}</td><td><a href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></td><td><a href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></td><td>${data[d]["target_date"]}</td><td>${data[d]["weights"]}</td></tr>`
+                    let html_f = `<tr><td>${data[d]["id"]}</td><td><a target="_blank" href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></td><td><a target="_blank" href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></td><td>${data[d]["target_date"]}</td><td>${data[d]["weights"]}</td></tr>`
                     result_table_body.append(html_f)
                 }
                 $("#now_page").html(PAGE)

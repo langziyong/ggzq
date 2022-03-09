@@ -1,25 +1,15 @@
 import pymysql
+import api.config as config
 
-HOST = "124.221.102.241"
-# HOST = "localhost"
-PORT = 3306
-USER = "root"
-PASSWORD = "0000"
-# PASSWORD = "Hawk2020,,"
-DATABASE = "ggzq"
+HOST = config.HOST
+PORT = config.PORT
+USER = config.USER
+PASSWORD = config.PASSWORD
+DATABASE = config.DATABASE
 
 
 class DatabaseIO:
     def __init__(self, connect_args = None):
-        """
-        :param connect_args: {
-                HOST = "192.168.0.5",
-                PORT = 3306,
-                USER = "root",
-                PASSWORD = "0000",
-                DATABASE = "ggzq",
-        }
-        """
         if connect_args is None:
             self.connect_args = {
                 "HOST": HOST,

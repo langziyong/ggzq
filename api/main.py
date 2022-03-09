@@ -484,8 +484,6 @@ def start(process_n = PROCESS_N, thread_n = THREAD_N):
 
     # ——————————————————————————— 数据上传 ———————————————————————————————#
     print("执行数据入库.....")
-    for i in result:
-        print(i["target_title"], i["weights"])
     db.upload_result(result)
 
 

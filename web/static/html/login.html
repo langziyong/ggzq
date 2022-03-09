@@ -49,7 +49,14 @@
                     },
                     complete:function (r,s) {
                         if (s === "success"){
-                            alert("ok")
+                            let data = r["responseJSON"]
+                            if (data["status"]==="success"){
+                                location.reload()
+                            }else {
+                                alert(data["error"])
+                            }
+                        } else {
+                            alert("网络请求失败")
                         }
                     }
                 })
