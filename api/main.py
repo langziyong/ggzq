@@ -1,3 +1,7 @@
+import json
+import sys
+
+sys.path.append("../")
 import asyncio
 import queue
 import time
@@ -15,15 +19,17 @@ HEADERS = {
 }
 
 # 定义全局参数
-THREAD_N = 8
-PROCESS_N = None
-GET_HTML_TIMEOUT = 30
-ASYNC_N = 4
-TITLE_KEYWORD = ["公告", "公示", "通知", "紧急", "招聘", "聘用", "聘用", "印发", "教育", "细则", "公开", "教师", "教资"]
-TITLE_SEARCH_DEPTH = 2
-TITLE_LENGTH = 7
-ALLOW_DATE_OBJ_TAG_NAME = ["i", "div", "span", "a", "p", ]
-EFFECTIVE_TIME_DIFFERENCE = 30 * 24 * 60 * 60
+db = database_io.DatabaseIO()
+config = db.config()
+PROCESS_N = int(json.loads(config["SYSTEM_CONFIG"])["PROCESS_N"])
+THREAD_N = int(json.loads(config["SYSTEM_CONFIG"])["THREAD_N"])
+ASYNC_N = int(json.loads(config["SYSTEM_CONFIG"])["ASYNC_TASK_N"])
+TITLE_LENGTH = int(json.loads(config["SYSTEM_CONFIG"])["TITLE_LENGTH"])
+GET_HTML_TIMEOUT = int(json.loads(config["SYSTEM_CONFIG"])["GET_HTML_TIMEOUT"])
+EFFECTIVE_TIME_DIFFERENCE = int(json.loads(config["SYSTEM_CONFIG"])["EFFECTIVE_TIME_DIFFERENCE"])
+TITLE_SEARCH_DEPTH = int(json.loads(config["SYSTEM_CONFIG"])["TITLE_SEARCH_DEPTH"])
+WEIGHTS_LIMIT = int(json.loads(config["SYSTEM_CONFIG"])["WEIGHTS_LIMIT"])
+TITLE_KEYWORD = json.loads(config["KEYWORD"])
 # 计数初始化
 J = {
     "PAGE_FIND_OK": 0,
@@ -159,84 +165,6 @@ class Threads(threading.Thread):
                     [self.output_queue.put_nowait(i) for i in result]
         print("线程ID: %s执行完成" % self.thread_id)
 
-    # def get_html(self, url_obj: dict) -> str:
-    #     try:
-    #         # response = session.get(
-    #         #     url = url_obj["web_url"],
-    #         #     headers = HEADERS,
-    #         #     timeout = 5
-    #         # )
-    #         # response.html.render(wait = 2)
-    #         response = requests.get(
-    #             url = url_obj["web_url"],
-    #             headers = HEADERS,
-    #             timeout = 5
-    #         )
-    #
-    #     except requests.exceptions.ConnectionError:
-    #         info_print({
-    #             "STATUS": "FAIL",
-    #             "URL": url_obj["web_url"],
-    #             "WEB_NAME": url_obj["web_name"],
-    #             "ERROR/CODE": "无法连接到服务器"
-    #         })
-    #         J["FAIL"] += 1
-    #         # url_status.append({
-    #         #     "url": url_obj["web_url"],
-    #         #     "web_name": url_obj["web_name"],
-    #         #     "status": "无法连接到此服务器"
-    #         # })
-    #         return "无法连接到此服务器"
-    #
-    #     except requests.exceptions.ReadTimeout:
-    #         info_print({
-    #             "STATUS": "TIMEOUT",
-    #             "URL": url_obj["web_url"],
-    #             "WEB_NAME": url_obj["web_name"],
-    #             "ERROR/CODE": "连接超时"
-    #         })
-    #         J["TIMEOUT"] += 1
-    #         # url_status.append({
-    #         #     "url": url_obj["web_url"],
-    #         #     "web_name": url_obj["web_name"],
-    #         #     "status": "连接超时"
-    #         # })
-    #
-    #         return "连接超时"
-    #
-    #     if response.status_code == 200:
-    #         url_obj["page"] = response.content
-    #         if response.request.path_url != "/":
-    #             url_obj["host"] = re.sub(response.request.path_url, '', response.request.url)
-    #         else:
-    #             url_obj["host"] = response.request.url
-    #         J["SUCCESS"] += 1
-    #         info_print({
-    #             "STATUS": "SUCCESS",
-    #             "URL": url_obj["web_url"],
-    #             "WEB_NAME": url_obj["web_name"],
-    #             "ERROR/CODE": "200"
-    #         })
-    #
-    #         # 转到解析
-    #         self.Parser.resolve(url_obj)
-    #         return "success"
-    #     else:
-    #         info_print({
-    #             "STATUS": "ERROR",
-    #             "URL": url_obj["web_url"],
-    #             "WEB_NAME": url_obj["web_name"],
-    #             "ERROR/CODE": response.status_code
-    #         })
-    #         J["ERROR"] += 1
-    #         # url_status.append({
-    #         #     "url": url_obj["web_url"],
-    #         #     "web_name": url_obj["web_name"],
-    #         #     "status": "连接错误，code:%s" % response.status_code
-    #         # })
-    #
-    #         return "连接失败"
-
 
 class ParserHTML:
     def __init__(self):
@@ -339,7 +267,7 @@ class ParserHTML:
             "target_title": target_title
         }
 
-        if len(result["target_title"]) <= 5:
+        if len(result["target_title"]) <= TITLE_LENGTH:
             J["FIND_TITLE_DISCARD"] += 1
             return None
 
@@ -405,7 +333,7 @@ def target_compare(compared_data: list, existed_target_url: list):
 
 
 # 关键词查询
-def keyword_query(compared_data: list, keyword_list = None):
+def keyword_query(compared_data: list, keyword_list = None, weights_limit = WEIGHTS_LIMIT):
     result = []
     if keyword_list is None: keyword_list = TITLE_KEYWORD
 
@@ -413,15 +341,18 @@ def keyword_query(compared_data: list, keyword_list = None):
         target["weights"] = 0
         for keyword in keyword_list:
             if keyword in target["target_title"]: target["weights"] += 1
-        result.append(target)
+        if target["weights"] >= weights_limit:
+            result.append(target)
 
     return result
 
 
 # 启动函数
-def start(process_n = PROCESS_N, thread_n = THREAD_N):
+def start():
     info()
-    db = database_io.DatabaseIO()
+    print("已连接到数据库 载入配置")
+    global PROCESS_N, THREAD_N, ASYNC_N, TITLE_KEYWORD, TITLE_LENGTH, EFFECTIVE_TIME_DIFFERENCE, GET_HTML_TIMEOUT, TITLE_SEARCH_DEPTH, db
+
     all_url = db.get_all_web_obj()
 
     # 获取到 [web_name,url] url_obj 对象列表
@@ -440,14 +371,14 @@ def start(process_n = PROCESS_N, thread_n = THREAD_N):
     t_oq = queue.Queue()
     [eq.put(i) for i in all_url]
     lock = Lock()
-    if process_n is None: process_n = os.cpu_count()
+    if PROCESS_N is None or PROCESS_N == 0: PROCESS_N = os.cpu_count()
     p_t_s = time.time()
     try:
-        process_id_list = range(process_n)
+        process_id_list = range(PROCESS_N)
         process = [Process(target = loading_process, args = (i, eq, oq, lock)) for i in process_id_list]
         [p.start() for p in process]
         RESULT = []
-        while len(RESULT) != process_n:
+        while len(RESULT) != PROCESS_N:
             RESULT.append(oq.get())
         [p.join() for p in process]
         for i in RESULT:
@@ -462,15 +393,15 @@ def start(process_n = PROCESS_N, thread_n = THREAD_N):
     except Exception as e:
         print(e)
     p_t_e = time.time()
-    print("获取网页内容完成 使用进程数量：%s 耗时：%s" % (process_n, (p_t_e - p_t_s)))
+    print("获取网页内容完成 使用进程数量：%s 耗时：%s" % (PROCESS_N, (p_t_e - p_t_s)))
 
     # ——————————————————————————— 解析开始 ———————————————————————————————#
-    print("解析开始 线程数量：%s 任务TAG：%s" % (thread_n, tag))
+    print("解析开始 线程数量：%s 任务TAG：%s" % (THREAD_N, tag))
     thread_lock = threading.Lock()
-    threads = [Threads(id = thread_id, entryQueue = t_eq, outputQueue = t_oq, lock = thread_lock) for thread_id in range(thread_n)]
+    threads = [Threads(id = thread_id, entryQueue = t_eq, outputQueue = t_oq, lock = thread_lock) for thread_id in range(THREAD_N)]
     [t.start() for t in threads]
     [t.join() for t in threads]
-    print("解析完成 使用线程数量：%s 任务TAG：%s" % (thread_n, tag))
+    print("解析完成 使用线程数量：%s 任务TAG：%s" % (THREAD_N, tag))
 
     # ——————————————————————————— 数据处理 ———————————————————————————————#
     # 从线程输出队列中取出数据
@@ -512,8 +443,6 @@ def info():
 
 if __name__ == "__main__":
     t_s = time.time()
-
     start()
-
     t_e = time.time()
     print("主进程退出 J = %s \n共耗时: %s " % (J, (t_e - t_s)))

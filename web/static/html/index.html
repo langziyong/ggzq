@@ -11,14 +11,14 @@
 </head>
 <body>
 <div class="background"></div>
-<div class="container sidebar">
+<div class="container-fluid sidebar">
     <h3>信息采集平台</h3>
     <div class="d-grid" style="padding: 0">
         <a class="btn btn-primary btn-block" style="text-align: left;margin-bottom: 8px" href="../html/index.html">抓取结果</a>
-        <a class="btn btn-primary btn-block" style="text-align: left;margin-bottom: 8px" href="../html/source_manage.html">修改来源</a>
-        <a class="btn btn-primary btn-block" style="text-align: left;margin-bottom: 8px" href="/logout">退出系统</a>
+        <a class="btn btn-primary btn-block" style="text-align: left;margin-bottom: 8px" href="../html/source_manage.html">来源管理</a>
+        <a class="btn btn-primary btn-block" style="text-align: left;margin-bottom: 8px" href="../html/setting.html">抓取设置</a>
+        <a class="btn btn-secondary btn-block" style="text-align: left;margin-bottom: 8px" href="/logout">退出系统</a>
     </div>
-    <p id="test_info"></p>
     <hr>
     <div class="d-grid">
         <div class="mb-2 mt-1">
@@ -26,10 +26,13 @@
             <input type="text" class="form-control" id="weights" placeholder="搜索大于这个值..." name="weights">
         </div>
         <div class="mb-2 mt-1">
-            <label for="to_page" class="form-label">页数：</label>
-            <input type="text" class="form-control" id="to_page" placeholder="要去哪一页..." name="to_page">
+            <label for="to_page" class="form-label">页数：</label><p id="page_info" style="display: inline"></p>
+            <select class="form-select" id="to_page">
+                <option value="" selected>选择要去的页数</option>
+            </select>
         </div>
-        <a class="btn btn-primary btn-block" id="search_jump" style="text-align: left">搜索/跳转</a>
+        <a class="btn btn-primary btn-block mb-2" id="search_jump" style="text-align: left">搜索/跳转</a>
+        <a class="btn btn-danger btn-block mb-2" id="data_self_check" style="text-align: left">数据自检</a>
     </div>
 
 </div>
@@ -50,7 +53,7 @@
         </table>
         <ul class="pagination justify-content-center">
             <li class="page-item"><a class="page-link" href="#" id="previous_page">前一页</a></li>
-            <li class="page-item active"><a class="page-link" href="#" id="now_page">None</a></li>
+            <li class="page-item"><a class="page-link" href="#" id="now_page">None</a></li>
             <li class="page-item"><a class="page-link" href="#" id="next_page">下一页</a></li>
         </ul>
     </div>

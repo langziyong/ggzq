@@ -1,3 +1,9 @@
+import json
+import math
+import sys
+
+sys.path.append("../")
+
 import pymysql
 import api.config as config
 
@@ -82,10 +88,15 @@ class DatabaseIO:
             sql = """SELECT COUNT(*) FROM result"""
             cursor.execute(sql, )
             total = cursor.fetchall()[0][0]
-            sql = """SELECT * FROM result ORDER BY id DESC LIMIT %d,%d""" % (int((int(p) - 1) * 50), int(l))
+            all_page = math.ceil(int(total) / int(l))
+            if not 1 <= int(p) <= int(all_page):
+                p = 1
+            sql = """SELECT * FROM result ORDER BY target_date DESC LIMIT %d,%d""" % (int((int(p) - 1) * 50), int(l))
             cursor.execute(sql, )
             return {
-                "total": total,
+                "total": int(total),
+                "all_page": int(all_page),
+                "page": int(p),
                 "data": [{
                     "id": i[0],
                     "web_url": i[1],
@@ -132,13 +143,18 @@ class DatabaseIO:
 
     def get_data_by_weights(self, p, l, weights):
         with self.connection.cursor() as cursor:
-            sql = """SELECT COUNT(*) FROM result"""
+            sql = """SELECT COUNT(*) FROM result  WHERE weights >= %d""" % int(weights)
             cursor.execute(sql, )
             total = cursor.fetchall()[0][0]
-            sql = """SELECT * FROM result WHERE weights >= %d ORDER BY id DESC LIMIT %d,%d""" % (int(weights), int((int(p) - 1) * 50), int(l))
+            all_page = math.ceil(int(total) / int(l))
+            if not 1 <= int(p) <= int(all_page):
+                p = 1
+            sql = """SELECT * FROM result WHERE weights >= %d ORDER BY target_date DESC LIMIT %d,%d""" % (int(weights), int((int(p) - 1) * 50), int(l))
             cursor.execute(sql, )
             return {
-                "total": total,
+                "total": int(total),
+                "all_page": int(all_page),
+                "page": int(p),
                 "data": [{
                     "id": i[0],
                     "web_url": i[1],
@@ -151,8 +167,39 @@ class DatabaseIO:
                 } for i in cursor.fetchall()]
             }
 
+    def config(self, name = None, new_data = None):
+        if new_data is None and name is None:
+            with self.connection.cursor() as cursor:
+                sql = """SELECT * FROM config"""
+                cursor.execute(sql, )
+                data = cursor.fetchall()
+                return {
+                    data[0][0]: data[0][1],
+                    data[1][0]: data[1][1],
+                    data[2][0]: data[2][1],
+                    data[3][0]: data[3][1],
+                }
+        elif name is not None and new_data is None:
+            with self.connection.cursor() as cursor:
+                sql = """SELECT * FROM config WHERE name=%s"""
+                cursor.execute(sql, name)
+                data = cursor.fetchall()
+                return {
+                    data[0][0]: data[0][1],
+                }
+        elif name is None and new_data is not None:
+            with self.connection.cursor() as cursor:
+                for i in new_data:
+                    sql = """UPDATE config SET value=%s WHERE name=%s"""
+                    cursor.execute(sql, (json.dumps(new_data[i]), i))
+                    print("更新配置 %s 为 %s" % (i, new_data[i]))
+                self.connection.commit()
+                return "更新完成"
+        else:
+            return None
+
 
 if __name__ == "__main__":
     db = DatabaseIO()
     # print(db.get_all_web_url())
-    print(db.get_data(5, 20))
+    print(db.config(name = None, new_data = None))
