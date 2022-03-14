@@ -27,7 +27,9 @@ def login():
     elif request.method == "POST":
         user = request.form.get("user", "")
         passwd = request.form.get("passwd", "")
-        if user == "admin" and passwd == "123456":
+        db = db_io.DatabaseIO()
+        USER = json.loads(db.config("USER")["USER"])
+        if user in USER and passwd == USER[user]:
             session["user"] = user
             return jsonify({
                 "status": "success",
@@ -65,11 +67,15 @@ def keyword_query_(compared_data, keyword_list, weights_limit):
 
 @app.route("/api/<operate>", methods = ["GET", "POST"])
 def api(operate):
+    if "user" in session:
+        pass
+    else:
+        return redirect(url_for("login"))
     db = db_io.DatabaseIO()
     args = request.args
     if operate == "get_all_data":
         return jsonify(db.get_data(args["page"], args["limit"]))
-    if operate == "get_all_source":
+    if operate == "get_source":
         return jsonify(db.get_source(args["page"], args["limit"]))
     if operate == "get_all_data_by_weights":
         return jsonify(db.get_data_by_weights(args["page"], args["limit"], args["weights"]))
@@ -99,19 +105,22 @@ def api(operate):
             "new_total": 0
         }
         result = []
-        weights = int(json.loads(db.config()["SYSTEM_CONFIG"])["WEIGHTS_LIMIT"])
-        keyword = json.loads(db.config()["KEYWORD"])
+        config = db.config()
+        weights = int(json.loads(config["SYSTEM_CONFIG"])["WEIGHTS_LIMIT"])
+        keyword = json.loads(config["KEYWORD"])
         all_target_url = db.get_all_target_url()
         all_data = db.get_data(1, 100000)["data"]
         count["origin_total"] = len(all_data)
-        for data in all_data:
-            if data["target_url"] in all_target_url:
-                pass
-                count["repeat_discard"] += 1
-            else:
-                result.append(data)
+
+        target_title_ = []
+        while len(all_data) != 0:
+            i = all_data.pop()
+            if i["target_title"] not in target_title_:
+                result.append(i)
+                target_title_.append(i["target_title"])
 
         result = keyword_query_(result, keyword, weights)
+        db.clearn_result()
         db.upload_result(result[1])
         count["weights_discard"] = result[0]
         count["new_total"] = len(result[1])

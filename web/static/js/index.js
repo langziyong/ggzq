@@ -28,9 +28,12 @@ $(function () {
     $("#data_self_check").click(function () {
         let choose = confirm("数据清理将会重新根据现有关键词计算权重，并删除不符合要求的数据，此操作不可逆，还要继续吗？")
         if (choose === true){
+            console.log(this)
+            $("#data_self_check").addClass("disabled").html("<span class=\"spinner-border spinner-border-sm\"></span>正在处理...")
             $.ajax({
                 url: "/api/data_self_check",
                 complete:function (r,s) {
+                    $("#data_self_check").removeClass("disabled").html("数据自检")
                     if(s==="success"){
                         console.log(r)
                         alert(r["responseText"])

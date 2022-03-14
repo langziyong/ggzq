@@ -10,7 +10,7 @@
     <script src="../js/source_manage.js"></script>
 </head>
 <body>
-<div class="background"></div>
+
 <div class="container-fluid sidebar">
     <h3>信息采集平台</h3>
     <div class="d-grid" style="padding: 0">
@@ -19,20 +19,34 @@
         <a class="btn btn-primary btn-block" style="text-align: left;margin-bottom: 8px" href="../html/setting.html">抓取设置</a>
         <a class="btn btn-secondary btn-block" style="text-align: left;margin-bottom: 8px" href="/logout">退出系统</a>
     </div>
-    <h3 id="test_info"></h3>
+    <hr>
+    <p id="info"></p>
 </div>
 <div class="container-fluid main">
     <div class="source_manage_display">
         <div class="source_manage_display_head">
             <span class="flex_item flex_item_1">ID</span>
             <span class="flex_item flex_item_2">站点名称</span>
-            <span class="flex_item flex_item_4">URL</span>
+            <span class="flex_item flex_item_3">URL</span>
             <span class="flex_item flex_item_1">状态</span>
-            <span class="flex_item flex_item_1">匹配模式/规则</span>
+            <span class="flex_item flex_item_1">信息</span>
+            <span class="flex_item flex_item_1">启用</span>
             <span class="flex_item flex_item_2">操作</span>
         </div>
         <div class="source_manage_display_body">
-
+            <div class="source_unit">
+                <span class="flex_item flex_item_1">1</span>
+                <span class="flex_item flex_item_2">测试站点111</span>
+                <span class="flex_item flex_item_3"><a  style="color: white" href="www.baidu.com">www.baidu.com</a></span>
+                <span class="flex_item flex_item_1">success</span>
+                <span class="flex_item flex_item_1">None</span>
+                <span class="flex_item flex_item_1">TRUE</span>
+                <span class="flex_item flex_item_2">
+                    <a style="color: white" href="www.baidu.com">编辑</a>
+                    <a style="color: white" href="www.baidu.com">禁用</a>
+                    <a style="color: white" href="www.baidu.com">删除</a>
+                </span>
+            </div>
         </div>
 <!--        <table class="table table-striped justify-content-center" id="source_table">-->
 <!--            <thead>-->

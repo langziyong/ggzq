@@ -59,13 +59,11 @@ class DatabaseIO:
         self.connection.commit()
         print("%s 条数据已更新至数据库" % len(result))
 
-    def upload_url_status(self, url_status: list, tag):
+    def upload_url_status(self, web_obj: list):
         with self.connection.cursor() as cursor:
-            sql = """DELETE FROM url_status"""
-            cursor.execute(sql)
-            sql = """INSERT INTO url_status (web_name, url, status, tag) VALUES (%s,%s,%s,%s)"""
-            for i in url_status:
-                cursor.execute(sql, (i["web_name"], i["web_url"], i["status"], tag))
+            sql = """UPDATE crawl_source SET f_crawl_status=%s,f_error_msg=%s WHERE f_source_id=%s;"""
+            for i in web_obj:
+                cursor.execute(sql, (i["status"], i["error"], i["id"]))
         self.connection.commit()
 
     def get_all_target_url(self):
@@ -76,11 +74,12 @@ class DatabaseIO:
 
     def get_all_web_obj(self):
         with self.connection.cursor() as cursor:
-            sql = """SELECT f_source_url,f_source_name FROM ggzq.crawl_source"""
+            sql = """SELECT f_source_id,f_source_url,f_source_name FROM ggzq.crawl_source WHERE disabled=0"""
             cursor.execute(sql)
             return [{
-                "web_url": i[0],
-                "web_name": i[1]
+                "id": i[0],
+                "web_url": i[1],
+                "web_name": i[2]
             } for i in cursor.fetchall()]
 
     def get_data(self, p, l):
@@ -114,7 +113,7 @@ class DatabaseIO:
             sql = """SELECT COUNT(*) FROM crawl_source"""
             cursor.execute(sql, )
             total = cursor.fetchall()[0][0]
-            sql = """SELECT f_source_id,f_source_url,f_source_name FROM crawl_source LIMIT %d,%d""" % (int((int(p) - 1) * 50), int(l))
+            sql = """SELECT f_source_id,f_source_url,f_source_name,f_crawl_status,f_error_msg,disabled FROM crawl_source LIMIT %d,%d""" % (int((int(p) - 1) * 50), int(l))
             cursor.execute(sql, )
             return {
                 "total": total,
@@ -122,6 +121,9 @@ class DatabaseIO:
                     "id": i[0],
                     "web_url": i[1],
                     "web_name": i[2],
+                    "web_status": i[3],
+                    "web_info": i[4],
+                    "disabled": i[5]
                 } for i in cursor.fetchall()]
             }
 
@@ -198,8 +200,15 @@ class DatabaseIO:
         else:
             return None
 
+    def clearn_result(self):
+        with self.connection.cursor() as cursor:
+            sql = """DELETE FROM result"""
+            cursor.execute(sql)
+        self.connection.commit()
+        return "清空完成"
+
 
 if __name__ == "__main__":
     db = DatabaseIO()
-    # print(db.get_all_web_url())
-    print(db.config(name = None, new_data = None))
+    print(db.get_all_web_obj())
+    # print(db.get_source(1,50))

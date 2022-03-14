@@ -5,18 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8ff66703-d10e-497c-b322-475810c4bf20" name="变更" comment="">
-      <change afterPath="$PROJECT_DIR$/static/html/setting.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/dataSources.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/ggzq.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/ggzq.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../api/database_io.py" beforeDir="false" afterPath="$PROJECT_DIR$/../api/database_io.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../api/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../api/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/web.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/web.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/html/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/html/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/css/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/static/css/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/html/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/html/login.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/html/source_manage.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/html/source_manage.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/js/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/js/source_manage.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/source_manage.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,7 +70,9 @@
       <workItem from="1646840899375" duration="2612000" />
       <workItem from="1646894428645" duration="6289000" />
       <workItem from="1646966115386" duration="3865000" />
-      <workItem from="1647132842261" duration="21181000" />
+      <workItem from="1647132842261" duration="21264000" />
+      <workItem from="1647218249213" duration="13325000" />
+      <workItem from="1647248565735" duration="1643000" />
     </task>
     <servers />
   </component>

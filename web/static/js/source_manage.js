@@ -13,29 +13,45 @@ $(function () {
         }
     )
 
-    $("")
-
     load_data_to_table()
 })
 
 function load_data_to_table() {
-    let table = $("#source_table");
-    let table_body = table.find("tbody")
+    let table_body = $(".source_manage_display_body")
 
     $.ajax({
-        url: "/api/get_all_source?page=" + PAGE + "&limit=" + LIMIT,
-        type: "get",
+        url: "/api/get_source?page=" + PAGE + "&limit=" + LIMIT,
+        type: "GET",
         complete: function (r, s) {
             if (s === "success") {
                 let data = r["responseJSON"]["data"]
+                console.log(data)
                 ALL_PAGE = Math.ceil(r["responseJSON"]["total"] / LIMIT)
                 table_body.html("")
                 for (const d in data) {
-                    let html_f = `<tr><td>${data[d]["id"]}</td><td><a href="#">${data[d]["web_name"]}</a></td><td><a href="${data[d]["web_url"]}">${data[d]["web_url"]}</a></td><td>未定义</td><td><a href="">删除</a><a href="">修改</a></td></tr>`
+                    let color = "green"
+                    if (data[d]["web_status"] === "FAIL"){
+                        color = "red"
+                    }
+                    let html_f = `
+                <div class="source_unit">
+                <span class="flex_item flex_item_1" style="text-align: center">${data[d]["id"]}</span>
+                <span class="flex_item flex_item_2" >${data[d]["web_name"]}</span>
+                <span class="flex_item flex_item_3"><a  href="${data[d]["web_url"]}">${data[d]["web_url"]}</a></span>
+                <span class="flex_item flex_item_1" style="text-align: center;color: ${color}">${data[d]["web_status"]}</span>
+                <span class="flex_item flex_item_1">${data[d]["web_info"]}</span>
+                <span class="flex_item flex_item_1" style="text-align: center">${data[d]["disabled"]}</span>
+                <span class="flex_item flex_item_2" style="text-align: center">
+                    <a style="color: rgb(0, 0, 0)" href="www.baidu.com">编辑</a>
+                    <a style="color: rgb(0, 0, 0)" href="www.baidu.com">禁用</a>
+                    <a style="color: rgb(0, 0, 0)" href="www.baidu.com">删除</a>
+                </span>
+                </div>`
                     table_body.append(html_f)
                 }
                 $("#now_page").html(PAGE)
-                $("#test_info").html(`当前第${PAGE}页,总${ALL_PAGE}页`)
+                $("#info").html(`共${r["responseJSON"]["total"]}条记录`)
+                // $("#test_info").html(`当前第${PAGE}页,总${ALL_PAGE}页`)
             } else {
                 console.log(r)
                 alert("网络连接失败")

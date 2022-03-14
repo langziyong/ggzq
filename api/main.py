@@ -37,9 +37,6 @@ J = {
     "FIND_TARGET": 0,
     "FIND_DATE_OBJ": 0,
     "FIND_TITLE_DISCARD": 0,
-    "GET_HTML_SUCCESS": 0,
-    "GET_HTML_FAIL": 0,
-    "GET_HTML_TIMEOUT": 0
 }
 
 
@@ -77,15 +74,16 @@ class AsyncGetHTML:
             })
             url_obj["html"] = await page.content()
             print("GET_HTML:%s OK" % (url,))
-            url_obj["status"] = "GET_HTML_SUCCESS"
+            url_obj["status"] = "SUCCESS"
+            url_obj["error"] = "OK"
             # self.output_queue.put(url_obj)
         except TimeoutError as e:
             print("GET_HTML:%s Fail: %s" % (url, e))
-            url_obj["status"] = "GET_HTML_TIMEOUT"
+            url_obj["status"] = "TIMEOUT"
             url_obj["error"] = e
         except Exception as e:
             print("GET_HTML:%s Fail: %s" % (url, e))
-            url_obj["status"] = "GET_HTML_FAIL"
+            url_obj["status"] = "FAIL"
             url_obj["error"] = e
         await page.close()
         return url_obj
@@ -327,9 +325,22 @@ def target_compare(compared_data: list, existed_target_url: list):
             pass
         else:
             result.append(i)
+
+    repeat = 0
+    result_ = []
+    target_title_ = []
+    while len(result) != 0:
+        i = result.pop()
+        if i["target_title"] in target_title_:
+            repeat += 1
+        else:
+            result_.append(i)
+            target_title_.append(i["target_title"])
+
     print("已存在总条数: %s 条" % len(existed_target_url))
-    print("新数据量: %s 条" % len(result))
-    return result
+    print("新数据量: %s 条" % len(result_))
+    print("自检重复: %s 条" % repeat)
+    return result_
 
 
 # 关键词查询
@@ -373,6 +384,7 @@ def start():
     lock = Lock()
     if PROCESS_N is None or PROCESS_N == 0: PROCESS_N = os.cpu_count()
     p_t_s = time.time()
+    web_obj = []
     try:
         process_id_list = range(PROCESS_N)
         process = [Process(target = loading_process, args = (i, eq, oq, lock)) for i in process_id_list]
@@ -381,15 +393,15 @@ def start():
         while len(RESULT) != PROCESS_N:
             RESULT.append(oq.get())
         [p.join() for p in process]
+
         for i in RESULT:
             if i is None:
                 pass
             else:
                 for r in i:
-                    if r["status"] == "GET_HTML_SUCCESS":
+                    if r["status"] == "SUCCESS":
                         t_eq.put(r)
-                    else:
-                        pass  # TODO: 添加到URL状态
+                    web_obj.append(r)
     except Exception as e:
         print(e)
     p_t_e = time.time()
@@ -416,6 +428,10 @@ def start():
     # ——————————————————————————— 数据上传 ———————————————————————————————#
     print("执行数据入库.....")
     db.upload_result(result)
+
+    # ——————————————————————————— 统计数据上传 ———————————————————————————————#
+    print("执行统计数据入库.....")
+    db.upload_url_status(web_obj)
 
 
 # 加载进程函数
