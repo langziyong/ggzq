@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>来源条目编辑</title>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename="bootstrap-5.1.3-dist/css/bootstrap.css") }}">
+    <script src="{{ url_for('static', filename="bootstrap-5.1.3-dist/js/bootstrap.js") }}"></script>
+</head>
+<body>
+<div class="container">
+    <form action="{{ url_for("manage_api",operate = "update_source")}}" id="load_this" method="post">
+        <div class="row">
+            <div class="col">
+                <div class="mb-3 mt-3">
+                    <label for="id" class="form-label">ID:</label>
+                    <input type="text" class="form-control" id="id" placeholder="自动生成无需填写" name="id" value="{{ data["id"] }}" readonly>
+                </div>
+            </div>
+            <div class="col">
+                <div class="mb-3 mt-3">
+                    <label for="create_time" class="form-label">创建时间:</label>
+                    <input type="text" class="form-control" id="create_time" placeholder="自动生成无需填写" name="create_time" value="{{ data["create_time"] }}" readonly>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3 mt-3">
+            <label for="web_name" class="form-label">站点名:</label>
+            <input type="text" class="form-control" id="web_name" placeholder="示例: 浙江省教育考试院" name="web_name" value="{{ data["web_name"] }}">
+        </div>
+        <div class="mb-3 mt-3">
+            <label for="web_url" class="form-label">站点URL:</label>
+            <input type="text" class="form-control" id="web_url" placeholder="" name="web_url" value="{{ data["web_url"] }}">
+        </div>
+        <div class="mb-3 mt-3">
+            <label for="web_status" class="form-label">状态:</label>
+            <input type="text" class="form-control" id="web_status" style="color: {{ "green" if data["web_status"] == "SUCCESS" else "red" }}" placeholder="自动生成无需填写" name="web_status" value="{{ data["web_status"] }}" readonly>
+        </div>
+        <div class="mb-3 mt-3">
+            <label for="return_info" class="form-label">返回信息:</label>
+            <input type="text" class="form-control" id="return_info" placeholder="自动生成无需填写" name="web_info" value="{{ data["web_info"] }}" readonly>
+        </div>
+        <div class="form-check mb-3">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" name="disabled" value="1" {{ "checked" if data["disabled"]==1 else "" }}> 禁用
+            </label>
+        </div>
+        <div class="btn btn-secondary mb-3 mt-3" id="back">< 返回</div>
+        <button type="submit" class="btn btn-primary" id="submit">保存</button>
+    </form>
+</div>
+</body>
+</html>

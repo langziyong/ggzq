@@ -52,8 +52,7 @@ $(function () {
 })
 
 function load_data_to_table() {
-    let result_table = $("#result_table");
-    let result_table_body = result_table.find("tbody")
+    let result_table_body = $(".source_manage_display_body")
 
     if (WEIGHTS_VALUE !== 0){
         $.ajax({
@@ -66,7 +65,14 @@ function load_data_to_table() {
                     CONDITION_ALL_PAGE = r["responseJSON"]["all_page"]
                     result_table_body.html("")
                     for (const d in data) {
-                        let html_f = `<tr><td>${data[d]["id"]}</td><td><a target="_blank" href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></td><td><a target="_blank" href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></td><td>${data[d]["target_date"]}</td><td>${data[d]["weights"]}</td></tr>`
+                        let html_f = `
+                        <div class="source_unit">
+                            <span class="flex_item flex_item_1" style="text-align: center">${data[d]["id"]}</span>
+                            <span class="flex_item flex_item_2"><a target="_blank" href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></span>
+                            <span class="flex_item flex_item_3"><a target="_blank" href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></span>
+                            <span class="flex_item flex_item_1" style="text-align: center">${data[d]["target_date"]}</span>
+                            <span class="flex_item flex_item_1" style="text-align: center">${data[d]["weights"]}</span>
+                        </div>`
                         result_table_body.append(html_f)
                     }
                     console.log(r["responseJSON"])
@@ -101,7 +107,14 @@ function load_data_to_table() {
                 console.log(r["responseJSON"])
                 result_table_body.html("")
                 for (const d in data) {
-                    let html_f = `<tr><td>${data[d]["id"]}</td><td><a target="_blank" href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></td><td><a target="_blank" href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></td><td>${data[d]["target_date"]}</td><td>${data[d]["weights"]}</td></tr>`
+                    let html_f = `
+                        <div class="source_unit">
+                            <span class="flex_item flex_item_1" style="text-align: center">${data[d]["id"]}</span>
+                            <span class="flex_item flex_item_2"><a target="_blank" href="${data[d]["web_url"]}">${data[d]["web_name"]}</a></span>
+                            <span class="flex_item flex_item_3"><a target="_blank" href="${data[d]["target_url"]}">${data[d]["target_title"]}</a></span>
+                            <span class="flex_item flex_item_1" style="text-align: center">${data[d]["target_date"]}</span>
+                            <span class="flex_item flex_item_1" style="text-align: center">${data[d]["weights"]}</span>
+                        </div>`
                     result_table_body.append(html_f)
                 }
                 $("#now_page").html(PAGE)

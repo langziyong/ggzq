@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="../css/index.css">
 </head>
 <body>
-<div class="background"></div>
 <div class="container-fluid sidebar">
     <h3>信息采集平台</h3>
     <div class="d-grid" style="padding: 0">
@@ -36,21 +35,24 @@
     </div>
 
 </div>
-<div class="container main">
+<div class="container-fluid main">
     <div class="result_display">
-        <table class="table table-striped justify-content-center" id="result_table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>站点名称</th>
-                <th>目标标题</th>
-                <th>目标日期</th>
-                <th>权重</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+        <div class="source_manage_display_head">
+            <span class="flex_item flex_item_1">ID</span>
+            <span class="flex_item flex_item_2">站点名称</span>
+            <span class="flex_item flex_item_3">目标标题</span>
+            <span class="flex_item flex_item_1">目标日期</span>
+            <span class="flex_item flex_item_1">权重</span>
+        </div>
+        <div class="source_manage_display_body">
+            <div class="source_unit">
+                <span class="flex_item flex_item_1">1</span>
+                <span class="flex_item flex_item_2">测试站点111</span>
+                <span class="flex_item flex_item_3"><a  style="color: white" href="">www.baidu.com</a></span>
+                <span class="flex_item flex_item_1">111</span>
+                <span class="flex_item flex_item_1">None</span>
+            </div>
+        </div>
         <ul class="pagination justify-content-center">
             <li class="page-item"><a class="page-link" href="#" id="previous_page">前一页</a></li>
             <li class="page-item"><a class="page-link" href="#" id="now_page">None</a></li>

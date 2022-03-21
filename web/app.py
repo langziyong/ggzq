@@ -127,5 +127,26 @@ def api(operate):
         return jsonify(count)
 
 
+@app.route("/manageApi/<operate>", methods = ["GET", "POST"])
+def manage_api(operate):
+    if "user" in session:
+        pass
+    else:
+        return redirect(url_for("login"))
+    db = db_io.DatabaseIO()
+    args = request.args
+    if operate == "edit":
+        data = db.get_source_detailed(args["id"])
+        return render_template("edit_page.html", data = data)
+    if operate == "update_source":
+        return jsonify(db.source_update(request.form.to_dict()))
+    if operate == "disabled":
+        return jsonify(db.source_update({"id": args.get("id"), "disabled": args.get("v")}))
+    if operate == "delete":
+        return jsonify(db.delete(args.get("id")))
+    if operate == "add_source":
+        return render_template("edit_page.html",data = {})
+
+
 if __name__ == "__main__":
     app.run(port = 80, host = "0.0.0.0")

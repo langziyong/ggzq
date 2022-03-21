@@ -25,6 +25,7 @@ class DatabaseIO:
                 "DATABASE": DATABASE
             }
         self.connection = self.connect_db(self.connect_args)
+        self.host = HOST
 
     @staticmethod
     def connect_db(connect_args = None) -> pymysql.connect:
@@ -45,11 +46,48 @@ class DatabaseIO:
         )
         return connection
 
-    def add_url(self, url_obj: list) -> None:
+    def delete(self, id):
         with self.connection.cursor() as cursor:
-            sql = """INSERT INTO all_url (title, url) VALUES (%s,%s)"""
-            cursor.execute(sql, (url_obj[0], url_obj[1]))
+            sql = """DELETE FROM crawl_source where f_source_id=%s"""
+            cursor.execute(sql, id)
         self.connection.commit()
+        return {
+                    "type": "delete",
+                    "id": id,
+                }
+
+    def source_update(self, new_date: dict, ):
+        with self.connection.cursor() as cursor:
+            if len(new_date) == 2 and new_date.get("id", "") != "":
+                id = new_date.pop("id")
+                d = new_date.popitem()
+                sql = """UPDATE crawl_source SET %s=%s WHERE f_source_id=%s;""" % (d[0], d[1], id)
+                cursor.execute(sql,)
+                result = {
+                    "type": "update",
+                    "id": id,
+                    "key": d[0],
+                    "value": d[1]
+                }
+            else:
+                if "id" in new_date and new_date["id"] != "":
+                    sql = """UPDATE crawl_source SET f_source_url=%s,f_source_name=%s,disabled=%s WHERE f_source_id=%s;"""
+                    cursor.execute(sql, (new_date["web_url"], new_date["web_name"], new_date.get("disabled", 0), new_date["id"]))
+                    result = {
+                        "type": "update",
+                        "id": new_date["id"]
+                    }
+                else:
+                    sql = """INSERT INTO crawl_source (f_source_name,f_source_url,disabled) VALUES (%s,%s,%s)"""
+                    cursor.execute(sql, (new_date["web_name"], new_date["web_url"], new_date.get("disabled", 0)))
+                    sql = """SELECT f_source_id FROM crawl_source WHERE f_source_url=%s"""
+                    cursor.execute(sql, (new_date["web_url"]))
+                    result = {
+                        "type": "new_add",
+                        "id": cursor.fetchone()[0]
+                    }
+        self.connection.commit()
+        return result
 
     def upload_result(self, result: list):
         with self.connection.cursor() as cursor:
@@ -129,7 +167,7 @@ class DatabaseIO:
 
     def get_source_detailed(self, id):
         with self.connection.cursor() as cursor:
-            sql = """SELECT f_source_id,f_source_url,f_source_name,f_province,f_city,f_county,f_province_code,f_create_time FROM  crawl_source WHERE f_source_id = %s"""
+            sql = """SELECT f_source_id,f_source_url,f_source_name,f_province,f_city,f_county,f_province_code,f_create_time,disabled,f_crawl_status,f_error_msg FROM  crawl_source WHERE f_source_id = %s"""
             cursor.execute(sql, id)
             source = cursor.fetchall()[0]
             return {
@@ -140,7 +178,10 @@ class DatabaseIO:
                 "web_city": source[4],
                 "web_county": source[5],
                 "web_province_code": source[6],
-                "create_time": source[7]
+                "create_time": source[7],
+                "disabled": source[8],
+                "web_status": source[9],
+                "web_info": source[10]
             }
 
     def get_data_by_weights(self, p, l, weights):

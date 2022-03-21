@@ -1,17 +1,19 @@
 import json
 import sys
-
-sys.path.append("../")
 import asyncio
 import queue
 import time
 import threading
-import database_io
+
+import pyppeteer
 from bs4 import BeautifulSoup
 import re
 from pyppeteer import launch
 from multiprocessing import Process, Queue, Lock
 import os
+
+sys.path.append("../")
+import database_io
 
 # 定义全局消息头
 HEADERS = {
@@ -56,7 +58,8 @@ class AsyncGetHTML:
         except Exception as e:
             print(e)
 
-    async def download_html(self, obj):
+    @staticmethod
+    async def download_html(obj, browser, name) -> dict:
         # print("进程 %s 获取到 URL : %s 当前 task: %s" % (self.process_id, url_obj["web_url"], task))
         url_obj = obj
         url = url_obj["web_url"]
@@ -66,29 +69,29 @@ class AsyncGetHTML:
             print("HOST不匹配 尝试直接添加 / URL：%s" % url)
         else:
             url_obj["host"] = host.group()
-        page = await self.browser.newPage()
+        page = await browser.newPage()
         try:
             await page.goto(url, {
                 "waitUntil": "networkidle2",
                 "timeout": 1000 * GET_HTML_TIMEOUT
             })
             url_obj["html"] = await page.content()
-            print("GET_HTML:%s OK" % (url,))
+            print("Task:%s GET_HTML:%s OK " % (name, url,))
             url_obj["status"] = "SUCCESS"
             url_obj["error"] = "OK"
             # self.output_queue.put(url_obj)
         except TimeoutError as e:
-            print("GET_HTML:%s Fail: %s" % (url, e))
+            print("Task:%s GET_HTML:%s Fail: %s" % (name, url, e))
             url_obj["status"] = "TIMEOUT"
             url_obj["error"] = e
         except Exception as e:
-            print("GET_HTML:%s Fail: %s" % (url, e))
+            print("Task:%s GET_HTML:%s Fail: %s" % (name, url, e))
             url_obj["status"] = "FAIL"
             url_obj["error"] = e
         await page.close()
         return url_obj
 
-    async def run(self):
+    async def run(self, name):
         result = []
         try:
             while True:
@@ -102,7 +105,7 @@ class AsyncGetHTML:
                     url_obj = self.entry_queue.get_nowait()
                     self.async_lock.release()
                     self.lock.release()
-                    r = await self.download_html(url_obj)
+                    r = await self.download_html(url_obj, self.browser, name)
                     result.append(r)
         except Exception as e:
             print(e)
@@ -111,7 +114,7 @@ class AsyncGetHTML:
         result = []
         try:
             # 异步 并发
-            tasks = [self.run() for i in range(ASYNC_N)]
+            tasks = [self.run(i) for i in range(ASYNC_N)]
             done, pending = self.loop.run_until_complete(asyncio.wait(tasks))
             for i in pending:
                 print("pending:%s" % i)
@@ -291,6 +294,7 @@ class ParserHTML:
         if "http" in result["target_url"]:
             pass
         else:
+
             result["target_url"] = url_obj["host"] + result["target_url"]
 
         J["FIND_TARGET"] += 1
@@ -360,10 +364,8 @@ def keyword_query(compared_data: list, keyword_list = None, weights_limit = WEIG
 
 # 启动函数
 def start():
-    info()
-    print("已连接到数据库 载入配置")
     global PROCESS_N, THREAD_N, ASYNC_N, TITLE_KEYWORD, TITLE_LENGTH, EFFECTIVE_TIME_DIFFERENCE, GET_HTML_TIMEOUT, TITLE_SEARCH_DEPTH, db
-
+    print("已连接到数据库 %s 载入配置..." % db.host)
     all_url = db.get_all_web_obj()
 
     # 获取到 [web_name,url] url_obj 对象列表
@@ -376,34 +378,63 @@ def start():
     # all_url = [{"web_url": "http://www.aiyanlin.cn/", "web_name": "TEST_2"} for i in range(50)]
     tag = str(time.time_ns())
     # ——————————————————————————— 进程开始 ———————————————————————————————#
-    eq = Queue()
-    oq = Queue()
-    t_eq = queue.Queue()
-    t_oq = queue.Queue()
-    [eq.put(i) for i in all_url]
-    lock = Lock()
+
+    web_obj = []
     if PROCESS_N is None or PROCESS_N == 0: PROCESS_N = os.cpu_count()
     p_t_s = time.time()
-    web_obj = []
-    try:
-        process_id_list = range(PROCESS_N)
-        process = [Process(target = loading_process, args = (i, eq, oq, lock)) for i in process_id_list]
-        [p.start() for p in process]
-        RESULT = []
-        while len(RESULT) != PROCESS_N:
-            RESULT.append(oq.get())
-        [p.join() for p in process]
+    if PROCESS_N == 1:
+        print("进程数量为1，不使用多进程技术")
+        t_eq = queue.Queue()
+        t_oq = queue.Queue()
 
-        for i in RESULT:
-            if i is None:
-                pass
-            else:
-                for r in i:
-                    if r["status"] == "SUCCESS":
-                        t_eq.put(r)
-                    web_obj.append(r)
-    except Exception as e:
-        print(e)
+        async def AsyncGET(web_obj_list: list, browser: pyppeteer.launch, name):
+            _result = []
+            while web_obj_list:
+                _result.append(await AsyncGetHTML.download_html(web_obj_list.pop(), browser, name))
+            return _result
+
+        async def main():
+            browser = await pyppeteer.launch()
+            _r = await asyncio.gather(*[asyncio.create_task(AsyncGET(all_url, browser, i)) for i in range(ASYNC_N)])
+            await browser.close()
+            _result = []
+            for i in _r:
+                _result += i
+            return _result
+
+        result = asyncio.run(main())
+        for r in result:
+            if r["status"] == "SUCCESS":
+                t_eq.put(r)
+            web_obj.append(r)
+
+    else:
+        eq = Queue()
+        oq = Queue()
+        t_eq = queue.Queue()
+        t_oq = queue.Queue()
+        [eq.put(i) for i in all_url]
+        lock = Lock()
+        try:
+            process_id_list = range(PROCESS_N)
+            process = [Process(target = loading_process, args = (i, eq, oq, lock)) for i in process_id_list]
+            [p.start() for p in process]
+            RESULT = []
+            while len(RESULT) != PROCESS_N:
+                RESULT.append(oq.get())
+
+            [p.join() for p in process]
+
+            for i in RESULT:
+                if i is None:
+                    pass
+                else:
+                    for r in i:
+                        if r["status"] == "SUCCESS":
+                            t_eq.put(r)
+                        web_obj.append(r)
+        except Exception as e:
+            print(e)
     p_t_e = time.time()
     print("获取网页内容完成 使用进程数量：%s 耗时：%s" % (PROCESS_N, (p_t_e - p_t_s)))
 
@@ -444,11 +475,6 @@ def loading_process(name, eq: Queue, oq: Queue, lock):
         print("异步操作异常")
         print(e)
     print("进程关闭 id: %s" % name)
-
-
-def info_print(info: dict):
-    pass
-    # print(info)
 
 
 def info():

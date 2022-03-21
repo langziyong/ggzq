@@ -21,6 +21,9 @@
     </div>
     <hr>
     <p id="info"></p>
+    <div class="d-grid">
+        <a  class="btn btn-primary btn-block mb-2" id="add_source" style="text-align: left">添加项目</a>
+    </div>
 </div>
 <div class="container-fluid main">
     <div class="source_manage_display">
@@ -42,30 +45,20 @@
                 <span class="flex_item flex_item_1">None</span>
                 <span class="flex_item flex_item_1">TRUE</span>
                 <span class="flex_item flex_item_2">
-                    <a style="color: white" href="www.baidu.com">编辑</a>
-                    <a style="color: white" href="www.baidu.com">禁用</a>
-                    <a style="color: white" href="www.baidu.com">删除</a>
+                    <a style="color: white" href="/manageApi/edit">编辑</a>
+                    <a style="color: white" href="/manageApi/disabled">禁用</a>
+                    <a style="color: white" href="/manageApi/delete">删除</a>
                 </span>
             </div>
         </div>
-<!--        <table class="table table-striped justify-content-center" id="source_table">-->
-<!--            <thead>-->
-<!--            <tr>-->
-<!--                <th>ID</th>-->
-<!--                <th>站点名称</th>-->
-<!--                <th>URL</th>-->
-<!--                <th>匹配模式/规则</th>-->
-<!--                <th>操作</th>-->
-<!--            </tr>-->
-<!--            </thead>-->
-<!--            <tbody>-->
-<!--            </tbody>-->
-<!--        </table>-->
         <ul class="pagination justify-content-center">
             <li class="page-item"><a class="page-link" href="#" id="previous_page">前一页</a></li>
             <li class="page-item active"><a class="page-link" href="#" id="now_page">None</a></li>
             <li class="page-item"><a class="page-link" href="#" id="next_page">下一页</a></li>
         </ul>
+    </div>
+    <div class="load_web_detailed" style="display: none">
+
     </div>
 </div>
 </body>
